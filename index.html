@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contract Negotiation Hub</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600&family=Noto+Serif:wght@400;600&display=swap');
+:root {
+  --navy:#0d1b2a; --navy-mid:#1a2d42; --teal:#00b4a6; --amber:#f5a623;
+  --red:#e05252; --green:#3cb98a; --slate:#8fa3b8; --offwhite:#f0f4f8;
+  --white:#fff; --card:#16253a; --border:rgba(255,255,255,0.07);
+  --purple:#7c9ef5;
+  --font:'Aptos','Noto Sans',Calibri,Candara,'Segoe UI',sans-serif;
+  --font-serif:'Aptos Display','Noto Serif','Cambria',Georgia,serif;
+  --font-mono:'Aptos Mono','Consolas','Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--navy);color:var(--offwhite);min-height:100vh;}
+
+.hdr{background:linear-gradient(135deg,var(--navy-mid),var(--navy));border-bottom:1px solid var(--border);padding:22px 36px;display:flex;align-items:center;justify-content:space-between;gap:20px;}
+.hdr-l h1{font-family:var(--font-serif);font-size:1.75rem;color:var(--white);line-height:1;font-weight:600;}
+.hdr-l .sub{font-size:.68rem;color:var(--slate);font-family:var(--font-mono);letter-spacing:.1em;margin-top:5px;text-transform:uppercase;}
+.hdr-r{display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+.rdate{font-size:.68rem;color:var(--slate);font-family:var(--font-mono);text-align:right;}
+.rdate strong{color:var(--offwhite);display:block;font-size:.78rem;}
+
+.btn{border:none;padding:7px 14px;border-radius:6px;font-family:var(--font);font-weight:600;font-size:.75rem;cursor:pointer;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+.btn-teal{background:var(--teal);color:var(--navy);}
+.btn-teal:hover{background:#00cfc0;}
+.btn-amber{background:var(--amber);color:var(--navy);}
+.btn-amber:hover{background:#ffbe4d;}
+.btn-slate{background:rgba(255,255,255,.1);color:var(--offwhite);}
+.btn-slate:hover{background:rgba(255,255,255,.18);}
+.btn-green{background:var(--green);color:var(--navy);}
+.btn-green:hover{background:#4dd9a0;}
+#fi{display:none;}
+
+.tabs{display:flex;background:var(--navy-mid);border-bottom:1px solid var(--border);padding:0 36px;}
+.tab{padding:12px 22px;font-size:.8rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--slate);transition:all .2s;}
+.tab:hover{color:var(--offwhite);}
+.tab.active{color:var(--white);border-bottom-color:var(--teal);}
+
+/* STORAGE STATUS BAR */
+.storage-bar{background:rgba(0,180,166,.07);border-bottom:1px solid rgba(0,180,166,.15);padding:6px 36px;display:flex;align-items:center;gap:10px;font-size:.7rem;font-family:var(--font-mono);}
+.storage-dot{width:7px;height:7px;border-radius:50%;background:var(--slate);flex-shrink:0;transition:background .3s;}
+.storage-dot.saving{background:var(--amber);animation:pulse .6s infinite;}
+.storage-dot.saved{background:var(--green);}
+.storage-dot.error{background:var(--red);}
+.storage-msg{color:var(--slate);}
+.storage-msg.saved{color:var(--green);}
+.storage-msg.error{color:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+.main{padding:24px 36px 60px;}
+.view{display:none;}
+.view.active{display:block;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;margin-bottom:18px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ac,var(--teal));}
+.kpi-lbl{font-size:.63rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--slate);margin-bottom:6px;}
+.kpi-val{font-family:var(--font-serif);font-size:1.9rem;color:var(--white);line-height:1;font-weight:600;}
+.kpi-sub{font-size:.66rem;color:var(--slate);margin-top:4px;}
+
+.grid{display:grid;gap:14px;margin-bottom:14px;}
+.g3{grid-template-columns:1fr 1fr 1fr;}
+.g2{grid-template-columns:1fr 1fr;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.ph{padding:12px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.pt{font-family:var(--font-serif);font-size:.95rem;color:var(--white);font-weight:600;}
+.pm{font-size:.66rem;color:var(--slate);font-family:var(--font-mono);}
+.pb{padding:15px 18px;}
+
+.brow{margin-bottom:12px;}
+.brow:last-child{margin-bottom:0;}
+.blr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.bn{font-size:.78rem;color:var(--offwhite);}
+.bc{font-family:var(--font-mono);font-size:.72rem;color:var(--slate);}
+.bt{height:7px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;}
+.bf{height:100%;border-radius:4px;}
+
+.orow{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+.orow:last-child{margin-bottom:0;}
+.onm{font-size:.78rem;color:var(--white);width:120px;flex-shrink:0;}
+.olb{flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
+.olf{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--teal),#00e5d3);}
+.onum{font-family:var(--font-mono);font-size:.72rem;color:var(--slate);width:16px;text-align:right;flex-shrink:0;}
+
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:.65rem;font-weight:600;font-family:var(--font-mono);white-space:nowrap;}
+.bc-cust{background:rgba(0,180,166,.15);color:var(--teal);}
+.bc-legal{background:rgba(245,166,35,.15);color:var(--amber);}
+.bc-dp{background:rgba(60,185,138,.15);color:var(--green);}
+
+.ptbl{width:100%;border-collapse:collapse;font-size:.78rem;}
+.ptbl th{text-align:left;font-family:var(--font-mono);font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);padding:0 10px 8px 0;border-bottom:1px solid var(--border);font-weight:400;}
+.ptbl td{padding:8px 10px 8px 0;border-bottom:1px solid var(--border);vertical-align:top;}
+.ptbl tr:last-child td{border-bottom:none;}
+.pn{font-weight:600;color:var(--white);}
+.plist{font-size:.7rem;color:var(--slate);margin-top:2px;}
+.pcnt{font-family:var(--font-serif);font-size:1.35rem;color:var(--teal);font-weight:600;}
+
+.sl{font-family:var(--font-mono);font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;color:var(--slate);margin:20px 0 10px;display:flex;align-items:center;gap:8px;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.fbar{display:flex;gap:7px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.fbtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--slate);padding:4px 11px;border-radius:20px;font-size:.71rem;cursor:pointer;transition:all .15s;font-family:var(--font);}
+.fbtn:hover,.fbtn.active{background:var(--teal);border-color:var(--teal);color:var(--navy);font-weight:600;}
+.srch{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--offwhite);padding:5px 12px;border-radius:20px;font-size:.74rem;font-family:var(--font);outline:none;width:190px;margin-left:auto;}
+.srch::placeholder{color:var(--slate);}
+.srch:focus{border-color:var(--teal);}
+
+.ctw{overflow-x:auto;}
+.ct{width:100%;border-collapse:collapse;font-size:.78rem;min-width:1020px;}
+.ct th{text-align:left;font-family:var(--font-mono);font-size:.61rem;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);padding:0 10px 9px;border-bottom:1px solid var(--border);font-weight:400;white-space:nowrap;}
+.ct td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--offwhite);}
+.ct tr:last-child td{border-bottom:none;}
+.ct tr:hover td{background:rgba(255,255,255,.02);}
+.cnum{font-family:var(--font-mono);font-size:.7rem;color:var(--teal);}
+.cname{color:var(--white);font-size:.77rem;max-width:190px;}
+.cacct{font-size:.71rem;color:var(--slate);max-width:140px;}
+.ctype{font-size:.65rem;color:var(--slate);background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;white-space:nowrap;}
+.cpen-ext{color:var(--teal);font-style:italic;}
+.cpen-own{color:var(--amber);font-style:italic;}
+
+.ie{background:transparent;border:none;border-bottom:1px dashed rgba(255,255,255,.15);color:inherit;font-family:var(--font);font-size:.77rem;padding:1px 3px;outline:none;width:100%;min-width:55px;}
+.ie:focus{border-bottom-color:var(--teal);}
+.ssel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--offwhite);font-family:var(--font);font-size:.71rem;border-radius:4px;padding:2px 5px;outline:none;cursor:pointer;}
+.ssel:focus{border-color:var(--teal);}
+.delbtn{background:none;border:none;color:rgba(224,82,82,.3);cursor:pointer;font-size:.88rem;padding:2px 5px;transition:color .2s;}
+.delbtn:hover{color:var(--red);}
+.addbtn{background:rgba(0,180,166,.08);border:1px dashed rgba(0,180,166,.25);color:var(--teal);width:100%;padding:9px;font-family:var(--font);font-size:.76rem;cursor:pointer;transition:all .2s;border-radius:0 0 10px 10px;}
+.addbtn:hover{background:rgba(0,180,166,.18);border-style:solid;}
+
+.complete-cb{width:16px;height:16px;cursor:pointer;accent-color:var(--teal);flex-shrink:0;}
+.row-done td{opacity:.38;text-decoration:line-through;color:var(--slate)!important;}
+.row-done td .cnum,.row-done td .cpen-ext,.row-done td .cpen-own{color:var(--slate)!important;}
+.row-done td input,.row-done td select{opacity:.5;pointer-events:none;}
+
+.archive-toggle{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--slate);width:100%;padding:9px 16px;font-family:var(--font);font-size:.75rem;cursor:pointer;transition:all .2s;border-radius:8px;margin-top:14px;text-align:left;display:flex;align-items:center;gap:8px;}
+.archive-toggle:hover{background:rgba(255,255,255,.08);color:var(--offwhite);}
+.archive-table-wrap{background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:0 0 8px 8px;overflow:hidden;}
+
+.cm-banner{background:linear-gradient(120deg,rgba(0,180,166,.12),rgba(0,180,166,.04));border:1px solid rgba(0,180,166,.2);border-radius:10px;padding:16px 22px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.cm-banner-l{display:flex;align-items:center;gap:14px;}
+.cm-avatar{width:38px;height:38px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:1rem;color:var(--navy);flex-shrink:0;font-weight:600;}
+.cm-name{font-family:var(--font-serif);font-size:1.05rem;color:var(--white);font-weight:600;}
+.cm-role{font-size:.69rem;color:var(--teal);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+.cm-stats{display:flex;gap:18px;}
+.cm-stat{text-align:right;}
+.cm-stat-val{font-family:var(--font-serif);font-size:1.4rem;color:var(--white);line-height:1;font-weight:600;}
+.cm-stat-lbl{font-size:.65rem;color:var(--slate);font-family:var(--font-mono);margin-top:2px;}
+.cm-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* LOADING OVERLAY */
+.loading{position:fixed;inset:0;background:rgba(13,27,42,.85);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px;}
+.loading-spinner{width:36px;height:36px;border:3px solid rgba(0,180,166,.3);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;}
+.loading-text{font-family:var(--font-mono);font-size:.8rem;color:var(--slate);}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media print {
+  body{background:#fff!important;color:#111!important;}
+  .hdr,.tabs,.storage-bar,.main>.view#view-cm,.fbar,.addbtn,.archive-toggle,.delbtn,.btn,.complete-cb,.ie,.ssel{display:none!important;}
+  .main{padding:0!important;}
+  .view#view-director{display:block!important;}
+  .kpi{background:#f4f7fa!important;border:1px solid #dde3ea!important;break-inside:avoid;}
+  .kpi::before{background:#00b4a6!important;}
+  .kpi-lbl,.kpi-sub,.pm,.sl,.bn,.bc,.plist,.cacct{color:#555!important;}
+  .kpi-val,.pt,.pn,.pcnt,.cname{color:#111!important;}
+  .panel{background:#fff!important;border:1px solid #dde3ea!important;break-inside:avoid;margin-bottom:14px;}
+  .ph{border-bottom:1px solid #dde3ea!important;}
+  .bt{background:#e8edf2!important;}
+  .ct th{color:#555!important;border-bottom:1px solid #dde3ea!important;}
+  .ct td{color:#111!important;border-bottom:1px solid #eef1f4!important;}
+  .badge{border:1px solid currentColor!important;}
+  .pdf-header{display:block!important;}
+  .cnum{color:#00b4a6!important;}
+  .cpen-ext{color:#00a89b!important;}
+  .cpen-own{color:#d4891a!important;}
+  @page{margin:18mm 14mm;size:A4 landscape;}
+}
+.pdf-header{display:none;}
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay" class="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading contract data…</div>
+</div>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <h1>Contract Negotiation Hub</h1>
+    <div class="sub">Director Portfolio View &nbsp;·&nbsp; Contracts In Review</div>
+  </div>
+  <div class="hdr-r">
+    <div class="rdate"><strong id="rdate">—</strong>As of</div>
+    <button class="btn btn-teal" onclick="document.getElementById('fi').click()">⬆ Import XLSX</button>
+    <input type="file" id="fi" accept=".xlsx,.xls,.csv" onchange="handleFile(event)">
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('director')" id="tab-director">📊 Director View</div>
+  <div class="tab" onclick="switchTab('cm')" id="tab-cm">✍️ CM View — Maayan Behar</div>
+</div>
+
+<!-- Storage status bar -->
+<div class="storage-bar">
+  <div class="storage-dot" id="storageDot"></div>
+  <span class="storage-msg" id="storageMsg">Connecting to storage…</span>
+</div>
+
+<div class="main">
+
+  <!-- ══ DIRECTOR VIEW ══ -->
+  <div class="view active" id="view-director">
+    <div class="pdf-header" style="margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid #00b4a6;">
+      <div style="font-size:1.4rem;font-weight:700;color:#0d1b2a;font-family:Georgia,serif;">Contract Negotiation Hub — Director Summary</div>
+      <div id="pdf-meta" style="font-size:.78rem;color:#555;margin-top:4px;"></div>
+    </div>
+    <div class="kpi-row" id="kpiRow"></div>
+    <div class="grid g3">
+      <div class="panel"><div class="ph"><span class="pt">Review Status</span></div><div class="pb" id="statusChart"></div></div>
+      <div class="panel"><div class="ph"><span class="pt">Contract Type Mix</span></div><div class="pb" id="typeChart"></div></div>
+      <div class="panel"><div class="ph"><span class="pt">Contract Owner Workload</span></div><div class="pb" id="ownerChart"></div></div>
+    </div>
+    <div class="sl">Pen Holder Analysis</div>
+    <div class="grid g2">
+      <div class="panel"><div class="ph"><span class="pt">Who's Holding Pen</span><span class="pm">extracted from comments</span></div><div class="pb" id="penPanel"></div></div>
+      <div class="panel"><div class="ph"><span class="pt">Owner Breakdown</span></div><div class="pb" id="ownerPanel"></div></div>
+    </div>
+    <div class="sl">Full Contract Register</div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Active Contracts</span><span class="pm" id="dir-tcount"></span></div>
+      <div class="ctw">
+        <table class="ct"><thead><tr>
+          <th>Contract #</th><th>Account</th><th>Contract</th><th>Type</th><th>Status</th><th>Owner</th><th>Holding Pen</th><th>Notes</th>
+        </tr></thead><tbody id="dirBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CM VIEW ══ -->
+  <div class="view" id="view-cm">
+    <div class="cm-banner">
+      <div class="cm-banner-l">
+        <div class="cm-avatar">MB</div>
+        <div><div class="cm-name">Maayan Behar</div><div class="cm-role">Contract Manager</div></div>
+      </div>
+      <div class="cm-stats" id="cmStats"></div>
+      <div class="cm-actions">
+        <button class="btn btn-green" onclick="exportJSON()">⬇ Export JSON</button>
+        <button class="btn btn-amber" onclick="sendDirectorSummary()">📧 Send Director Summary</button>
+      </div>
+    </div>
+
+    <div class="kpi-row" id="cmKpiRow"></div>
+    <div class="grid g2">
+      <div class="panel"><div class="ph"><span class="pt">My Contracts by Status</span></div><div class="pb" id="cmStatusChart"></div></div>
+      <div class="panel"><div class="ph"><span class="pt">Who Has the Pen</span><span class="pm">on my contracts</span></div><div class="pb" id="cmPenChart"></div></div>
+    </div>
+
+    <div class="sl">Contract Register</div>
+    <div class="fbar" id="cmFbar"></div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Active Contracts</span></div>
+      <div class="ctw">
+        <table class="ct"><thead><tr>
+          <th>✓</th><th>Contract #</th><th>Account</th><th>Contract</th><th>Type</th><th>Status</th><th>Owner</th><th>Priority</th><th>Holding Pen</th><th>Comments / Notes</th><th></th>
+        </tr></thead><tbody id="cmBody"></tbody></table>
+      </div>
+      <button class="addbtn" onclick="addRow()">+ Add Contract</button>
+    </div>
+
+    <div id="archiveWrap" style="display:none;">
+      <button class="archive-toggle" onclick="toggleArchive()">
+        <span id="archiveArrow">▶</span> <span id="archiveLabel"></span>
+      </button>
+      <div id="archiveSection" style="display:none;">
+        <div class="archive-table-wrap">
+          <div class="ctw">
+            <table class="ct"><thead><tr>
+              <th>✓</th><th>Contract #</th><th>Account</th><th>Contract</th><th>Type</th><th>Status</th><th>Owner</th><th>Priority</th><th>Holding Pen</th><th>Notes</th><th></th>
+            </tr></thead><tbody id="archiveBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const DIRECTOR_EMAIL = 'bbroadaway@dynapower.com';
+const STORAGE_KEY = 'contracts_data';
+const DATE_KEY    = 'contracts_date';
+
+const SEED = [
+  {num:'00001011',account:'FCE - FuelCell Energy',name:'Standard Terms and Conditions',type:'Terms & Conditions',status:'Customer Review',owner:'Alex Comeau',comments:'with Kevin Walsh',priority:'Med',done:false},
+  {num:'00000472',account:'Mainspring Energy, Inc.',name:'MSA 2025 with Mainspring specific units',type:'Master Supplier Agreement',status:'Customer Review',owner:'Joseph Bono',comments:'with Ashish',priority:'Med',done:false},
+  {num:'00001077',account:'Mainspring Energy, Inc.',name:"Celestica T&C's (sample PO w/ T&C's)",type:'Terms & Conditions',status:'Customer Review',owner:'Joseph Bono',comments:'with Paul Kelley',priority:'Low',done:false},
+  {num:'00001162',account:'Amazon Logistics, Inc.',name:'Amazon Logistics - Work Order Amendment No. 1',type:'Terms & Conditions',status:'Customer Review',owner:'Alex Comeau',comments:'with Vidya',priority:'High',done:false},
+  {num:'00001199',account:'Special Metals Corp',name:'Special Metals Mutual NDA',type:'MNDA',status:'Customer Review',owner:'Josh King',comments:'with Eva Lever',priority:'Low',done:false},
+  {num:'00001193',account:'Hitachi Energy Australia',name:'Hitachi Energy GTC Goods and Services',type:'Terms & Conditions',status:'Customer Review',owner:'Andrew Kelley',comments:'with Nirmal Kumar',priority:'Med',done:false},
+  {num:'00001208',account:'Honeywell Process Solutions',name:'Honeywell BESS Subcontract Agreement - Amendment',type:'Other',status:'Customer Review',owner:'Oscar Marin',comments:'with Julio M',priority:'Med',done:false},
+  {num:'00001161',account:'Invenergy',name:'Invenergy Auwahi Wind Service PM - 5 Year',type:'Master Services Agreement',status:'Customer Review',owner:'Nick Malmos',comments:'sent agreement to Nick to share w/customer',priority:'High',done:false},
+  {num:'00001180',account:'Newen Systems Pvt Ltd *',name:'Newen Remote Technical Support Agmt.',type:'Master Services Agreement',status:'Customer Review',owner:'Nick Malmos',comments:'sent agreement to Nick to share w/supplier',priority:'Med',done:false},
+  {num:'00001215',account:'TDK Corporation of America *',name:'TDK Corporation of America (Dynapower as Customer)',type:'MNDA',status:'Customer Review',owner:'Saurabh Tewari',comments:"Saurabh to send NDA to supplier after Mike's review",priority:'Low',done:false},
+  {num:'00001160',account:'PowerSecure',name:'Master Supplier Agreement',type:'Master Supplier Agreement',status:'DP Commercial Review',owner:'Alex Comeau',comments:'with Branson',priority:'High',done:false},
+  {num:'00001210',account:'Risen Energy / SYL',name:'Terms and Conditions Review',type:'Terms & Conditions',status:'Legal Review',owner:'Alex Comeau',comments:'with Mike. Pending feedback from Nick and Kramer',priority:'Med',done:false},
+  {num:'00001198',account:'Southern Peru Copper Corp. (SPCC)',name:'NDA',type:'MNDA',status:'Legal Review',owner:'Oscar Marin',comments:'with Fernanda Ramos',priority:'Low',done:false},
+  {num:'00001025',account:'Eaton Crouse-Hinds - Syracuse NY',name:'Equipment Purchase Agreement',type:'Master Supplier Agreement',status:'Legal Review',owner:'James Kloeckener',comments:'with Mike',priority:'Med',done:false},
+  {num:'00001214',account:'Borg Warner',name:'Borg Warner MNDA',type:'MNDA',status:'Legal Review',owner:'Alex Comeau',comments:'Alex is reviewing which is the legal entity/governing law',priority:'Low',done:false},
+  {num:'00001107',account:'Amazon Lexington DKY5',name:'Amazon Logistics Inc-Lexington DKY5 O&M Agreement',type:'LTSA',status:'DP Commercial Review',owner:'Nick Malmos',comments:"with Nick to review Mike's redlines to Form of WO",priority:'High',done:false},
+];
+
+const STATUSES = ['Customer Review','Legal Review','DP Commercial Review'];
+const STATUS_COLORS = {'Customer Review':'#00b4a6','Legal Review':'#f5a623','DP Commercial Review':'#3cb98a'};
+const STATUS_BADGE = {'Customer Review':'bc-cust','Legal Review':'bc-legal','DP Commercial Review':'bc-dp'};
+const TYPE_COLORS = {'Terms & Conditions':'#00b4a6','MNDA':'#f5a623','Master Supplier Agreement':'#3cb98a','Master Services Agreement':'#7c9ef5','LTSA':'#c97cf5','Other':'#8fa3b8'};
+const TYPES = ['Terms & Conditions','MNDA','Master Supplier Agreement','Master Services Agreement','LTSA','Other'];
+const PRIORITY_COLORS = {'High':'#e05252','Med':'#f5a623','Low':'#3cb98a'};
+
+let contracts = [];
+let cmFilter = 'All';
+let cmSearch = '';
+let archiveOpen = false;
+let saveTimer = null;
+
+// ── STORAGE ───────────────────────────────────────────────────────────────
+function setStorageStatus(state, msg) {
+  const dot = document.getElementById('storageDot');
+  const txt = document.getElementById('storageMsg');
+  dot.className = 'storage-dot ' + state;
+  txt.className = 'storage-msg ' + state;
+  txt.textContent = msg;
+}
+
+async function loadFromStorage() {
+  try {
+    const result = await window.storage.get(STORAGE_KEY);
+    const dateResult = await window.storage.get(DATE_KEY);
+    if (result && result.value) {
+      contracts = JSON.parse(result.value);
+      const d = dateResult ? dateResult.value : 'Loaded from storage';
+      document.getElementById('rdate').textContent = d;
+      setStorageStatus('saved', 'Auto-save active — all changes saved to cloud');
+    } else {
+      contracts = JSON.parse(JSON.stringify(SEED));
+      document.getElementById('rdate').textContent = 'Feb 26, 2026';
+      await saveToStorage();
+      setStorageStatus('saved', 'Auto-save active — initialized with Feb 26 snapshot');
+    }
+  } catch(e) {
+    contracts = JSON.parse(JSON.stringify(SEED));
+    document.getElementById('rdate').textContent = 'Feb 26, 2026';
+    setStorageStatus('error', 'Storage unavailable — changes will not persist');
+  }
+  document.getElementById('loadingOverlay').style.display = 'none';
+  renderAll();
+}
+
+async function saveToStorage() {
+  setStorageStatus('saving', 'Saving…');
+  try {
+    await window.storage.set(STORAGE_KEY, JSON.stringify(contracts));
+    await window.storage.set(DATE_KEY, document.getElementById('rdate').textContent);
+    setStorageStatus('saved', 'All changes saved · ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+  } catch(e) {
+    setStorageStatus('error', 'Save failed — check connection');
+  }
+}
+
+function scheduleSave() {
+  setStorageStatus('saving', 'Saving…');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToStorage, 600);
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────
+function extractPen(comments, owner) {
+  if (!comments) return {pen:owner, external:false};
+  const c = comments.trim();
+  const withM = c.match(/^with\s+(.+?)(?:\s*[.,]|$)/i);
+  if (withM) return {pen:withM[1].trim(), external:true};
+  const pendM = c.match(/pending feedback from\s+(.+?)(?:\s+and\s+|\s*[.,]|$)/i);
+  if (pendM) return {pen:pendM[1].trim(), external:true};
+  const sendM = c.match(/(?:send|sent)\s+\w+\s+to\s+(?:the\s+)?(\w+)/i);
+  if (sendM) return {pen:sendM[1].trim(), external:true};
+  if (/is reviewing/i.test(c)) return {pen:owner, external:false};
+  return {pen:owner, external:false};
+}
+function countBy(arr,key){return arr.reduce((a,x)=>{const v=x[key]||'?';a[v]=(a[v]||0)+1;return a;},{});}
+function escH(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+function renderBars(id,data,colorFn,total){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=Object.entries(data).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+    <div class="brow"><div class="blr"><span class="bn">${k}</span><span class="bc">${v} / ${total}</span></div>
+    <div class="bt"><div class="bf" style="width:${Math.round(v/total*100)}%;background:${colorFn(k)};"></div></div></div>`).join('');
+}
+
+// ── DIRECTOR VIEW ─────────────────────────────────────────────────────────
+function renderDirector() {
+  const active = contracts.filter(c=>!c.done);
+  const total = active.length;
+  const byStatus = countBy(active,'status');
+  const byOwner = countBy(active,'owner');
+  const topOwner = Object.entries(byOwner).sort((a,b)=>b[1]-a[1])[0];
+  const extPens = active.filter(c=>extractPen(c.comments,c.owner).external).length;
+  const done = contracts.filter(c=>c.done).length;
+
+  document.getElementById('kpiRow').innerHTML = [
+    {label:'Active Contracts',val:total,sub:'in pipeline',ac:'#00b4a6'},
+    {label:'Customer Review',val:byStatus['Customer Review']||0,sub:'with customer',ac:'#00b4a6'},
+    {label:'Legal Review',val:byStatus['Legal Review']||0,sub:'with legal',ac:'#f5a623'},
+    {label:'DP Commercial',val:byStatus['DP Commercial Review']||0,sub:'internal review',ac:'#3cb98a'},
+    {label:'Pen External',val:extPens,sub:'outside our team',ac:'#7c9ef5'},
+    {label:'Completed',val:done,sub:'archived',ac:'#3cb98a'},
+  ].map(k=>`<div class="kpi" style="--ac:${k.ac}"><div class="kpi-lbl">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
+
+  renderBars('statusChart', byStatus, s=>STATUS_COLORS[s]||'#8fa3b8', total||1);
+  renderBars('typeChart', countBy(active,'type'), t=>TYPE_COLORS[t]||'#8fa3b8', total||1);
+
+  const ownerSorted = Object.entries(byOwner).sort((a,b)=>b[1]-a[1]);
+  const maxO = Math.max(1,...ownerSorted.map(x=>x[1]));
+  document.getElementById('ownerChart').innerHTML = ownerSorted.map(([nm,cnt])=>`
+    <div class="orow"><div class="onm">${nm}</div>
+    <div class="olb"><div class="olf" style="width:${Math.round(cnt/maxO*100)}%"></div></div>
+    <div class="onum">${cnt}</div></div>`).join('');
+
+  const penMap = {};
+  active.forEach(c=>{
+    const {pen,external}=extractPen(c.comments,c.owner);
+    if(!penMap[pen])penMap[pen]={cs:[],external};
+    penMap[pen].cs.push(c);
+  });
+  document.getElementById('penPanel').innerHTML =
+    `<table class="ptbl"><thead><tr><th>Pen Holder</th><th>Contracts</th><th>#</th></tr></thead><tbody>`+
+    Object.entries(penMap).sort((a,b)=>b[1].cs.length-a[1].cs.length).map(([pen,{cs,external}])=>`
+      <tr><td><div class="pn">${pen}</div><div style="font-size:.66rem;color:${external?'#00b4a6':'#f5a623'};">${external?'External party':'Contract owner'}</div></td>
+      <td><div class="plist">${cs.map(c=>`#${c.num}`).join(', ')}</div></td>
+      <td class="pcnt">${cs.length}</td></tr>`).join('')+`</tbody></table>`;
+
+  document.getElementById('ownerPanel').innerHTML = ownerSorted.map(([owner,cnt])=>{
+    const ocs=active.filter(c=>c.owner===owner);
+    const bySt=countBy(ocs,'status');
+    const bdgs=Object.entries(bySt).map(([s,n])=>
+      `<span class="badge ${STATUS_BADGE[s]||''}">${s.replace(' Review','').replace('DP Commercial','DPC')} ${n}</span>`).join(' ');
+    const ext=ocs.filter(c=>extractPen(c.comments,c.owner).external).length;
+    return `<div style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span style="font-size:.79rem;font-weight:600;color:var(--white);">${owner}</span>
+        ${ext>0?`<span style="font-size:.65rem;color:var(--teal);font-family:var(--font-mono);">${ext} ext↗</span>`:''}
+      </div><div style="display:flex;gap:4px;flex-wrap:wrap;">${bdgs}</div></div>`;
+  }).join('');
+
+  document.getElementById('dir-tcount').textContent=`${total} active`;
+  document.getElementById('dirBody').innerHTML = active.map(c=>{
+    const {pen,external}=extractPen(c.comments,c.owner);
+    return `<tr><td><span class="cnum">${c.num}</span></td><td><div class="cacct">${escH(c.account)}</div></td>
+      <td><div class="cname">${escH(c.name)}</div></td><td><span class="ctype">${escH(c.type)}</span></td>
+      <td><span class="badge ${STATUS_BADGE[c.status]||''}">${c.status}</span></td>
+      <td style="font-size:.77rem;">${escH(c.owner)}</td>
+      <td><span class="${external?'cpen-ext':'cpen-own'}">${escH(pen)}</span></td>
+      <td style="font-size:.73rem;color:var(--slate);max-width:200px;">${escH(c.comments)}</td></tr>`;
+  }).join('');
+}
+
+// ── CM VIEW ───────────────────────────────────────────────────────────────
+function renderCM() {
+  const active = contracts.filter(c=>!c.done);
+  const done = contracts.filter(c=>c.done);
+  const total = active.length;
+  const byStatus = countBy(active,'status');
+  const byPri = countBy(active,'priority');
+  const extPens = active.filter(c=>extractPen(c.comments,c.owner).external);
+
+  document.getElementById('cmStats').innerHTML = [
+    {val:total,lbl:'Active'},{val:extPens.length,lbl:'Pen External'},
+    {val:byPri['High']||0,lbl:'High Priority'},{val:done.length,lbl:'Completed'},
+  ].map(s=>`<div class="cm-stat"><div class="cm-stat-val">${s.val}</div><div class="cm-stat-lbl">${s.lbl}</div></div>`).join('');
+
+  document.getElementById('cmKpiRow').innerHTML = [
+    {label:'Active Contracts',val:total,sub:'in pipeline',ac:'#00b4a6'},
+    {label:'Customer Review',val:byStatus['Customer Review']||0,sub:'awaiting customer',ac:'#00b4a6'},
+    {label:'Legal Review',val:byStatus['Legal Review']||0,sub:'with legal team',ac:'#f5a623'},
+    {label:'DP Commercial',val:byStatus['DP Commercial Review']||0,sub:'internal review',ac:'#3cb98a'},
+    {label:'High Priority',val:byPri['High']||0,sub:'needs attention',ac:'#e05252'},
+    {label:'Completed',val:done.length,sub:'archived',ac:'#3cb98a'},
+  ].map(k=>`<div class="kpi" style="--ac:${k.ac}"><div class="kpi-lbl">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
+
+  renderBars('cmStatusChart', byStatus, s=>STATUS_COLORS[s]||'#8fa3b8', total||1);
+
+  const penMap={};
+  active.forEach(c=>{
+    const {pen,external}=extractPen(c.comments,c.owner);
+    if(!penMap[pen])penMap[pen]={count:0,external};
+    penMap[pen].count++;
+  });
+  const penSorted=Object.entries(penMap).sort((a,b)=>b[1].count-a[1].count);
+  const maxP=Math.max(1,...penSorted.map(x=>x[1].count));
+  document.getElementById('cmPenChart').innerHTML = penSorted.map(([pen,{count,external}])=>`
+    <div class="brow"><div class="blr">
+      <span class="bn" style="color:${external?'var(--teal)':'var(--amber)'};">${pen} <span style="font-size:.64rem;opacity:.7;">${external?'(ext)':'(int)'}</span></span>
+      <span class="bc">${count}</span></div>
+    <div class="bt"><div class="bf" style="width:${Math.round(count/maxP*100)}%;background:${external?'var(--teal)':'var(--amber)'};"></div></div></div>`
+  ).join('') || '<div style="font-size:.78rem;color:var(--slate);">No active contracts</div>';
+
+  const all=['All',...STATUSES];
+  document.getElementById('cmFbar').innerHTML =
+    all.map(s=>`<button class="fbtn${cmFilter===s?' active':''}" onclick="setCMFilter('${s}')">${s}</button>`).join('')+
+    `<input class="srch" placeholder="Search…" oninput="setCMSearch(this.value)" value="${escH(cmSearch)}">`;
+
+  const rows = active.filter(c=>{
+    const mS=cmFilter==='All'||c.status===cmFilter;
+    const s=cmSearch.toLowerCase();
+    const mQ=!s||c.account.toLowerCase().includes(s)||c.name.toLowerCase().includes(s)||c.num.includes(s)||c.owner.toLowerCase().includes(s);
+    return mS&&mQ;
+  });
+  document.getElementById('cmBody').innerHTML = rows.map(c=>buildRow(c,contracts.indexOf(c))).join('');
+
+  const archWrap=document.getElementById('archiveWrap');
+  if(done.length>0){
+    archWrap.style.display='block';
+    document.getElementById('archiveLabel').textContent=`Completed Contracts (${done.length})`;
+    document.getElementById('archiveBody').innerHTML = done.map(c=>buildRow(c,contracts.indexOf(c))).join('');
+  } else { archWrap.style.display='none'; }
+}
+
+function buildRow(c, idx) {
+  const doneClass = c.done ? ' class="row-done"' : '';
+  const priColor = PRIORITY_COLORS[c.priority]||'#8fa3b8';
+  const {pen,external}=extractPen(c.comments,c.owner);
+  return `<tr${doneClass}>
+    <td><input type="checkbox" class="complete-cb" ${c.done?'checked':''} onchange="toggleDone(${idx},this.checked)"></td>
+    <td><input class="ie cnum" value="${escH(c.num)}" onchange="edit(${idx},'num',this.value)" style="color:var(--teal);width:90px;"></td>
+    <td><input class="ie" value="${escH(c.account)}" onchange="edit(${idx},'account',this.value)" style="max-width:130px;"></td>
+    <td><input class="ie" value="${escH(c.name)}" onchange="edit(${idx},'name',this.value)" style="max-width:180px;"></td>
+    <td><select class="ssel" onchange="edit(${idx},'type',this.value)">${TYPES.map(t=>`<option${c.type===t?' selected':''}>${t}</option>`).join('')}</select></td>
+    <td><select class="ssel" onchange="edit(${idx},'status',this.value)">${STATUSES.map(s=>`<option${c.status===s?' selected':''}>${s}</option>`).join('')}</select></td>
+    <td><input class="ie" value="${escH(c.owner)}" onchange="edit(${idx},'owner',this.value)" style="width:100px;"></td>
+    <td><select class="ssel" onchange="edit(${idx},'priority',this.value)" style="color:${priColor};">${['High','Med','Low'].map(p=>`<option${c.priority===p?' selected':''}>${p}</option>`).join('')}</select></td>
+    <td><span class="${external?'cpen-ext':'cpen-own'}">${escH(pen)}</span></td>
+    <td><input class="ie" value="${escH(c.comments)}" onchange="edit(${idx},'comments',this.value)" style="max-width:190px;"></td>
+    <td><button class="delbtn" onclick="delRow(${idx})" title="Remove">✕</button></td>
+  </tr>`;
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('view-'+tab).classList.add('active');
+}
+function toggleArchive(){archiveOpen=!archiveOpen;document.getElementById('archiveSection').style.display=archiveOpen?'block':'none';document.getElementById('archiveArrow').textContent=archiveOpen?'▼':'▶';}
+function setCMFilter(s){cmFilter=s;renderCM();}
+function setCMSearch(v){cmSearch=v;renderCM();}
+
+function edit(idx,field,val){contracts[idx][field]=val;renderAll();scheduleSave();}
+function toggleDone(idx,checked){contracts[idx].done=checked;renderAll();scheduleSave();}
+function delRow(idx){if(confirm('Remove this contract?')){contracts.splice(idx,1);renderAll();scheduleSave();}}
+function addRow(){contracts.unshift({num:'NEW-'+(contracts.length+1),account:'',name:'New Contract',type:'Terms & Conditions',status:'Customer Review',owner:'',comments:'',priority:'Med',done:false});cmFilter='All';cmSearch='';renderAll();scheduleSave();}
+function renderAll(){renderDirector();renderCM();}
+
+// ── JSON EXPORT ───────────────────────────────────────────────────────────
+function exportJSON() {
+  const today = new Date().toISOString().slice(0,10);
+  const payload = {
+    exported: new Date().toISOString(),
+    exportedBy: 'Maayan Behar',
+    asOf: document.getElementById('rdate').textContent,
+    summary: {
+      total: contracts.length,
+      active: contracts.filter(c=>!c.done).length,
+      completed: contracts.filter(c=>c.done).length,
+    },
+    contracts: contracts.map(c => ({
+      contractNumber: c.num,
+      accountName: c.account,
+      contractName: c.name,
+      contractType: c.type,
+      reviewStatus: c.status,
+      contractOwner: c.owner,
+      priority: c.priority,
+      holdingPen: extractPen(c.comments, c.owner).pen,
+      penExternal: extractPen(c.comments, c.owner).external,
+      comments: c.comments,
+      completed: c.done,
+    }))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Contracts_Export_${today}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── SEND DIRECTOR SUMMARY ─────────────────────────────────────────────────
+function sendDirectorSummary() {
+  const active = contracts.filter(c=>!c.done);
+  const done = contracts.filter(c=>c.done);
+  const byStatus = countBy(active,'status');
+  const byPri = countBy(active,'priority');
+  const extPens = active.filter(c=>extractPen(c.comments,c.owner).external);
+  const today = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('pdf-meta').textContent = `Prepared by Maayan Behar, Contract Manager  ·  ${today}  ·  ${active.length} active contracts`;
+
+  let body = `CONTRACT NEGOTIATION HUB — DIRECTOR SUMMARY\n`;
+  body += `Prepared by Maayan Behar  |  ${today}\n${'─'.repeat(52)}\n\n`;
+  body += `PIPELINE SNAPSHOT\n`;
+  body += `  Active Contracts:     ${active.length}\n`;
+  body += `  Customer Review:      ${byStatus['Customer Review']||0}\n`;
+  body += `  Legal Review:         ${byStatus['Legal Review']||0}\n`;
+  body += `  DP Commercial Review: ${byStatus['DP Commercial Review']||0}\n`;
+  body += `  Pen External:         ${extPens.length}\n`;
+  body += `  High Priority:        ${byPri['High']||0}\n`;
+  body += `  Completed (archived): ${done.length}\n\n`;
+  body += `WHO'S HOLDING PEN\n`;
+  const penMap={};
+  active.forEach(c=>{const{pen,external}=extractPen(c.comments,c.owner);if(!penMap[pen])penMap[pen]={nums:[],external};penMap[pen].nums.push(c.num);});
+  Object.entries(penMap).sort((a,b)=>b[1].nums.length-a[1].nums.length).forEach(([pen,{nums,external}])=>{
+    body+=`  ${pen.padEnd(22)} [${external?'External':'Internal'}]  Contracts: ${nums.join(', ')}\n`;
+  });
+  body += `\nACTIVE CONTRACT REGISTER\n`;
+  active.forEach(c=>{const{pen}=extractPen(c.comments,c.owner);body+=`  #${c.num}  ${c.account.substring(0,28).padEnd(28)}  ${c.status.padEnd(20)}  Owner: ${c.owner}  Pen: ${pen}\n`;});
+  if(done.length>0){body+=`\nCOMPLETED\n`;done.forEach(c=>{body+=`  #${c.num}  ${c.account.substring(0,28).padEnd(28)}  ${c.owner}\n`;});}
+  body += `\n${'─'.repeat(52)}\nNOTE: Please attach the Director Summary PDF before sending.`;
+
+  const subject = encodeURIComponent(`Contract Negotiation Hub — Director Summary ${today}`);
+  switchTab('director');
+  setTimeout(()=>{ window.print(); setTimeout(()=>{ window.location.href=`mailto:${DIRECTOR_EMAIL}?subject=${subject}&body=${encodeURIComponent(body)}`; }, 800); }, 400);
+}
+
+// ── FILE IMPORT ───────────────────────────────────────────────────────────
+function handleFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      const mapped=[];
+      rows.forEach(r=>{
+        const num=String(r['Contract Number']||'').trim();
+        if(!num||!/^\d/.test(num))return;
+        mapped.push({num,account:String(r['Account Name']||'').trim(),name:String(r['Contract Name']||'').trim(),
+          type:String(r['Contract Type']||'').trim(),status:String(r['Contract Review Status']||'').trim(),
+          owner:String(r['Contract Owner']||'').trim(),comments:String(r['Comments']||'').trim(),priority:'Med',done:false});
+      });
+      if(mapped.length){
+        contracts=mapped;
+        const dm=file.name.match(/\d{4}-\d{2}-\d{2}/);
+        document.getElementById('rdate').textContent=dm?dm[0]:new Date().toLocaleDateString();
+        renderAll();scheduleSave();
+      } else {alert('No rows found — check column headers match the template.');}
+    }catch(err){alert('Could not read file: '+err.message);}
+  };
+  reader.readAsBinaryString(file);
+  e.target.value='';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+loadFromStorage();
+</script>
+</body>
+</html>
