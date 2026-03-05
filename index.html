@@ -330,7 +330,7 @@ let cmSearch = '';
 let archiveOpen = false;
 let saveTimer = null;
 
-// ── STORAGE ───────────────────────────────────────────────────────────────
+// ── STORAGE (localStorage) ────────────────────────────────────────────────
 function setStorageStatus(state, msg) {
   const dot = document.getElementById('storageDot');
   const txt = document.getElementById('storageMsg');
@@ -339,38 +339,36 @@ function setStorageStatus(state, msg) {
   txt.textContent = msg;
 }
 
-async function loadFromStorage() {
+function loadFromStorage() {
   try {
-    const result = await window.storage.get(STORAGE_KEY);
-    const dateResult = await window.storage.get(DATE_KEY);
-    if (result && result.value) {
-      contracts = JSON.parse(result.value);
-      const d = dateResult ? dateResult.value : 'Loaded from storage';
-      document.getElementById('rdate').textContent = d;
-      setStorageStatus('saved', 'Auto-save active — all changes saved to cloud');
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const date = localStorage.getItem(DATE_KEY);
+    if (raw) {
+      contracts = JSON.parse(raw);
+      document.getElementById('rdate').textContent = date || 'Feb 26, 2026';
+      setStorageStatus('saved', 'Auto-save active — data saved in this browser');
     } else {
       contracts = JSON.parse(JSON.stringify(SEED));
       document.getElementById('rdate').textContent = 'Feb 26, 2026';
-      await saveToStorage();
+      saveToStorage();
       setStorageStatus('saved', 'Auto-save active — initialized with Feb 26 snapshot');
     }
   } catch(e) {
     contracts = JSON.parse(JSON.stringify(SEED));
     document.getElementById('rdate').textContent = 'Feb 26, 2026';
-    setStorageStatus('error', 'Storage unavailable — changes will not persist');
+    setStorageStatus('error', 'Storage unavailable — try a non-incognito browser window');
   }
   document.getElementById('loadingOverlay').style.display = 'none';
   renderAll();
 }
 
-async function saveToStorage() {
-  setStorageStatus('saving', 'Saving…');
+function saveToStorage() {
   try {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(contracts));
-    await window.storage.set(DATE_KEY, document.getElementById('rdate').textContent);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
+    localStorage.setItem(DATE_KEY, document.getElementById('rdate').textContent);
     setStorageStatus('saved', 'All changes saved · ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
   } catch(e) {
-    setStorageStatus('error', 'Save failed — check connection');
+    setStorageStatus('error', 'Save failed — storage may be full or blocked');
   }
 }
 
