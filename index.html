@@ -603,37 +603,17 @@ function exportJSON() {
 // ── SEND DIRECTOR SUMMARY ─────────────────────────────────────────────────
 function sendDirectorSummary() {
   const active = contracts.filter(c=>!c.done);
-  const done = contracts.filter(c=>c.done);
-  const byStatus = countBy(active,'status');
-  const byPri = countBy(active,'priority');
-  const extPens = active.filter(c=>extractPen(c.comments,c.owner).external);
   const today = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   document.getElementById('pdf-meta').textContent = `Prepared by Maayan Behar, Contract Manager  ·  ${today}  ·  ${active.length} active contracts`;
 
-  let body = `CONTRACT NEGOTIATION HUB — DIRECTOR SUMMARY\n`;
-  body += `Prepared by Maayan Behar  |  ${today}\n${'─'.repeat(52)}\n\n`;
-  body += `PIPELINE SNAPSHOT\n`;
-  body += `  Active Contracts:     ${active.length}\n`;
-  body += `  Customer Review:      ${byStatus['Customer Review']||0}\n`;
-  body += `  Legal Review:         ${byStatus['Legal Review']||0}\n`;
-  body += `  DP Commercial Review: ${byStatus['DP Commercial Review']||0}\n`;
-  body += `  Pen External:         ${extPens.length}\n`;
-  body += `  High Priority:        ${byPri['High']||0}\n`;
-  body += `  Completed (archived): ${done.length}\n\n`;
-  body += `WHO'S HOLDING PEN\n`;
-  const penMap={};
-  active.forEach(c=>{const{pen,external}=extractPen(c.comments,c.owner);if(!penMap[pen])penMap[pen]={nums:[],external};penMap[pen].nums.push(c.num);});
-  Object.entries(penMap).sort((a,b)=>b[1].nums.length-a[1].nums.length).forEach(([pen,{nums,external}])=>{
-    body+=`  ${pen.padEnd(22)} [${external?'External':'Internal'}]  Contracts: ${nums.join(', ')}\n`;
-  });
-  body += `\nACTIVE CONTRACT REGISTER\n`;
-  active.forEach(c=>{const{pen}=extractPen(c.comments,c.owner);body+=`  #${c.num}  ${c.account.substring(0,28).padEnd(28)}  ${c.status.padEnd(20)}  Owner: ${c.owner}  Pen: ${pen}\n`;});
-  if(done.length>0){body+=`\nCOMPLETED\n`;done.forEach(c=>{body+=`  #${c.num}  ${c.account.substring(0,28).padEnd(28)}  ${c.owner}\n`;});}
-  body += `\n${'─'.repeat(52)}\nNOTE: Please attach the Director Summary PDF before sending.`;
-
   const subject = encodeURIComponent(`Contract Negotiation Hub — Director Summary ${today}`);
+  const body = encodeURIComponent(`Branson,\n\nPlease find the Contract Negotiation Hub Director Summary attached.\n\nMaayan`);
+
   switchTab('director');
-  setTimeout(()=>{ window.print(); setTimeout(()=>{ window.location.href=`mailto:${DIRECTOR_EMAIL}?subject=${subject}&body=${encodeURIComponent(body)}`; }, 800); }, 400);
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ window.location.href=`mailto:${DIRECTOR_EMAIL}?subject=${subject}&body=${body}`; }, 800);
+  }, 400);
 }
 
 // ── FILE IMPORT ───────────────────────────────────────────────────────────
